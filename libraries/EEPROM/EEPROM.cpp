@@ -41,7 +41,7 @@ EEPROMClass::EEPROMClass(uint32_t sector)
 }
 
 EEPROMClass::EEPROMClass(void)
-: _sector((((uint32_t)&_SPIFFS_end - 0x40200000) / SPI_FLASH_SEC_SIZE))
+: _sector((((uint32_t)&_SPIFFS_end - 0x40200000) / SPI_FLASH_SEC_SIZE)-1)
 , _data(0)
 , _size(0)
 , _dirty(false)
@@ -51,11 +51,11 @@ EEPROMClass::EEPROMClass(void)
 void EEPROMClass::begin(size_t size) {
   if (size <= 0)
     return;
-  if (size > SPI_FLASH_SEC_SIZE)
-    size = SPI_FLASH_SEC_SIZE;
+  if (size > (SPI_FLASH_SEC_SIZE*2))
+    size = (SPI_FLASH_SEC_SIZE*2);
 
   size = (size + 3) & (~3);
-
+  
   //In case begin() is called a 2nd+ time, don't reallocate if size is the same
   if(_data && size != _size) {
     delete[] _data;
@@ -68,6 +68,7 @@ void EEPROMClass::begin(size_t size) {
 
   noInterrupts();
   spi_flash_read(_sector * SPI_FLASH_SEC_SIZE, reinterpret_cast<uint32_t*>(_data), _size);
+
   interrupts();
 
   _dirty = false; //make sure dirty is cleared in case begin() is called 2nd+ time
